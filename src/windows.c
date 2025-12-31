@@ -132,6 +132,8 @@ void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color){
 void drawme_init(){
    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "DrawMe - The slutty tool");
    SetTargetFPS(60);
+   Font default_font = LoadFontEx("/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf", 15, NULL, 0);
+   SetFontDefault(default_font);
    
    g_box_brush_color = make_hexbox(GREEN, 10, 100);
    g_box_brush_size = make_numbox(3, 2, 10, 250);
@@ -185,7 +187,7 @@ void drawme_mainloop(){
          DrawRectangleLinesEx(g_modeCircle, 1, BLACK);
          DrawRectangleLinesEx(g_modeSquare, 1, BLACK);
 
-         DrawText(g_modeString, 25, 55, 20, BLACK);
+         DrawText(g_modeString, 25, 55, 15, BLACK);
 
          draw_hexbox(&g_box_brush_color);
          draw_numbox(&g_box_brush_size);
@@ -330,24 +332,24 @@ void draw_hexbox(HexBox *hex){
    // color
    int x_offset = hex->rect.x + HEXBOX_PAD;
 
-   DrawText(hex->hex, x_offset, hex->rect.y, 20, BLACK);
+   DrawText(hex->hex, x_offset, hex->rect.y + HEXBOX_PAD, 15, BLACK);
    // R
    draw_numbox(&hex->r);
-   DrawText("R: ", x_offset, hex->r.rect.y + HEXBOX_PAD, 20, BLACK);
+   DrawText("R: ", x_offset, hex->r.rect.y + HEXBOX_PAD, 15, BLACK);
    // G
    draw_numbox(&hex->g);
-   DrawText("G: ", x_offset, hex->g.rect.y + HEXBOX_PAD, 20, BLACK);
+   DrawText("G: ", x_offset, hex->g.rect.y + HEXBOX_PAD, 15, BLACK);
    // B
    draw_numbox(&hex->b);
-   DrawText("B: ", x_offset, hex->b.rect.y + HEXBOX_PAD, 20, BLACK);
+   DrawText("B: ", x_offset, hex->b.rect.y + HEXBOX_PAD, 15, BLACK);
    // A
    draw_numbox(&hex->a);
-   DrawText("A: ", x_offset, hex->a.rect.y + HEXBOX_PAD, 20, BLACK);
+   DrawText("A: ", x_offset, hex->a.rect.y + HEXBOX_PAD, 15, BLACK);
 
    // Color Box
    int color_box_offset = 55;
-   DrawRectangle(x_offset + color_box_offset, hex->rect.y + 21, 20, 20, hex->value);
-   DrawRectangleLines(x_offset + color_box_offset, hex->rect.y + 21, 20, 20, BLACK);
+   DrawRectangle(x_offset + color_box_offset, hex->rect.y + 21, 15, 15, hex->value);
+   DrawRectangleLines(x_offset + color_box_offset, hex->rect.y + 21, 15, 15, BLACK);
 
    // Border of the whole thing
    DrawRectangleLinesEx(hex->rect, 1, BLACK);
@@ -431,7 +433,7 @@ void set_numbox_str(NumBox *num){
 
 void draw_numbox(NumBox *num){
    // The number
-   DrawText(num->number, num->rect.x + HEXBOX_PAD, num->rect.y + HEXBOX_PAD, 20, BLACK);
+   DrawText(num->number, num->rect.x + HEXBOX_PAD, num->rect.y + HEXBOX_PAD, 15, BLACK);
    
    // The border
    DrawRectangleLinesEx(num->rect, 1, BLACK);
