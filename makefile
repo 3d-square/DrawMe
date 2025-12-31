@@ -9,6 +9,9 @@ SRCS= src/windows.c src/events.c
 OBJS=$(subst src,obj,$(subst .c,.o,$(SRCS)))
 LIBNAME=libdrawme.so
 
+colorpick: colorpick.c
+	gcc $(CFLAGS) $(DEFS) $(INC) $(LPATH) $(RPATH) colorpick.c -o colorpick $(LIBS)
+
 drawme: $(LIBNAME) src/main.c
 	gcc $(CFLAGS) $(DEFS) $(INC) $(LPATH) $(RPATH) src/main.c -o drawme $(LIBS) -ldrawme
 
