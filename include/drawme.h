@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 typedef struct _canvas {
-   int x, y, width, height;
+   Rectangle rect;
    int rows;
    int cols;
    int pixel_size;
@@ -15,20 +15,42 @@ typedef struct _canvas {
 
 #define HEX_SIZE 16
 
+typedef struct _numbox {
+   Rectangle rect;
+   char number[32];
+   int value;
+   int deflt;
+   int max_size;
+   int size;
+} NumBox;
+
 typedef struct _hexbox {
    Rectangle rect;
    char hex[HEX_SIZE];
    Color value;
    int size;
+   NumBox r;
+   NumBox g;
+   NumBox b;
+   NumBox a;
+   char selected;
 } HexBox;
 
-typedef struct _numbox {
-   Rectangle rect;
-   char number[32];
-   int value;
-   int max_size;
-   int size;
-} NumBox;
+typedef int (*button_callback)(void *);
+
+typedef struct _clickable {
+   Rectangle *rect;
+   button_callback callback;
+} Clickable;
+
+#define MAX_UI_ELEMENTS 500
+
+typedef struct _ui {
+   Clickable lmb_clickable[MAX_UI_ELEMENTS];
+   int num_lmb_buttons;
+   Clickable rmb_clickable[MAX_UI_ELEMENTS];
+   int num_rmb_buttons;
+} DrawMeUI;
 
 #define HEXBOX_PAD 5
 
@@ -42,6 +64,7 @@ typedef enum {
 extern const int SCREEN_WIDTH;
 extern const int SCREEN_HEIGHT;
 extern DrawMeCanvas  g_CANVAS;
+extern DrawMeUI      g_UI;
 extern Rectangle     g_modeCircle;
 extern Rectangle     g_modeSquare;
 extern DrawMode      g_brush;
@@ -50,6 +73,7 @@ extern NumBox        g_box_brush_size;
 extern Color         g_erase_color;
 extern int           g_brush_size;
 extern int           g_selected;
+extern Vector2       g_mouse_pos;
 
 #define NONE_SELECT 0
 #define BRUSH_COLOR_SELECT 1
@@ -57,12 +81,24 @@ extern int           g_selected;
 
 /* Global Macros */
 #define CANVAS_PIXEL(i, j) (g_CANVAS.image + ((i) * g_CANVAS.cols) + (j))
-#define CANVAS_RECT() (CLITERAL(Rectangle){g_CANVAS.x, g_CANVAS.y, g_CANVAS.width, g_CANVAS.height})
 
 /* Global Functions */
 void drawme_init();
 void drawme_mainloop();
 void drawme_close();
+
+/* UI Functions */
+void ui_add_element(MouseButton button, Rectangle *bounds, button_callback callback);
+
+/* Callbacks */
+void ui_setup_callbacks();
+int brush_color_callback(void *);
+int  brush_size_callback(void *);
+int      canvas_callback(void *);
+int    canvas_r_callback(void *);
+int mode_square_callback(void *);
+int mode_circle_callback(void *);
+/* Callbacks */
 
 /* Private Functions windows.c */
 void canvas_update();
@@ -71,12 +107,18 @@ int pos_to_canvas_index(Vector2 pos, int *x, int *y);
 Color *get_canvas_pixel(Vector2 pos);
 void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color);
 
-void update_hexbox(HexBox *hex);
+int update_hexbox(HexBox *hex);
+void set_hexbox_value(HexBox *num);
+void set_hexbox_str(HexBox *num);
 void draw_hexbox(HexBox *hex);
+int hexbox_callback(HexBox *hex);
 HexBox make_hexbox(Color color, int x, int y);
 
-void update_numbox(NumBox *hex);
-void draw_numbox(NumBox *hex);
+int update_numbox(NumBox *num);
+void set_numbox_value(NumBox *num);
+void set_numbox_str(NumBox *num);
+void draw_numbox(NumBox *num);
+void limit_numbox(NumBox *num, int upper, int lower);
 NumBox make_numbox(int deflt, int max_chars, int x, int y);
 
 /* Utility Functions */

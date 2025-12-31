@@ -4,6 +4,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <assert.h>
+#include <string.h>
 
 #include "raylib.h"
 
@@ -11,34 +12,34 @@
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 800;
 
-int            g_scaling = 3;
+int            g_scaling = 1;
 DrawMeCanvas   g_CANVAS = {0};
+DrawMeUI       g_UI = {0};
 Texture2D      g_CANVAS_TEXTURE = {0};
 DrawMode       g_brush = MeCircle;
 int            g_brush_size = 3;
 const char     *g_modeString = "";
 Color          g_erase_color = WHITE;
 int            g_selected;
+Vector2        g_mouse_pos;
 /*********************************** GLOBALS ***********************************/
 
 // Radio Buttons
 Rectangle g_modeCircle = {.x = 25, .y = 25, .width = 25, .height = 25 };
 Rectangle g_modeSquare = {.x = 55, .y = 25, .width = 25, .height = 25 };
 
-// Hexboxes
+// Hex/Num boxes
 HexBox g_box_brush_color;
-
-// Numboxes
 NumBox g_box_brush_size;
 
 #include <stdarg.h>
 #define FATAL(...) do { fprintf(stderr, "ERROR: " __VA_ARGS__); exit(-1); } while(0)
 
 void canvas_init(int x, int y, int width, int height, int pixel_size){
-   g_CANVAS.x = x;
-   g_CANVAS.y = y;
-   g_CANVAS.height = height;
-   g_CANVAS.width = width;
+   g_CANVAS.rect.x = x;
+   g_CANVAS.rect.y = y;
+   g_CANVAS.rect.height = height;
+   g_CANVAS.rect.width = width;
    
    pixel_size *= g_scaling;
 
@@ -75,14 +76,14 @@ void canvas_update(){
 }
 
 void canvas_draw(){
-   DrawTextureEx(g_CANVAS_TEXTURE, CLITERAL(Vector2){g_CANVAS.x, g_CANVAS.y}, 0, g_scaling, WHITE);
-   DrawRectangleLinesEx(CANVAS_RECT(), 2, BLACK);
+   DrawTextureEx(g_CANVAS_TEXTURE, CLITERAL(Vector2){g_CANVAS.rect.x, g_CANVAS.rect.y}, 0, g_scaling, WHITE);
+   DrawRectangleLinesEx(g_CANVAS.rect, 2, BLACK);
 }
 
 int pos_to_canvas_index(Vector2 pos, int *x, int *y){
-   if(CheckCollisionPointRec(pos, CANVAS_RECT())){
-      *x = (pos.x - g_CANVAS.x) / g_CANVAS.pixel_size;
-      *y = (pos.y - g_CANVAS.y) / g_CANVAS.pixel_size;
+   if(CheckCollisionPointRec(pos, g_CANVAS.rect)){
+      *x = (pos.x - g_CANVAS.rect.x) / g_CANVAS.pixel_size;
+      *y = (pos.y - g_CANVAS.rect.y) / g_CANVAS.pixel_size;
 
       return 1;
    }
@@ -128,24 +129,22 @@ void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color){
    
 }
 
-
 void drawme_init(){
    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "DrawMe - The slutty tool");
    SetTargetFPS(60);
-
    
    g_box_brush_color = make_hexbox(GREEN, 10, 100);
    g_box_brush_size = make_numbox(3, 2, 10, 250);
 
    canvas_init(125, 50, SCREEN_WIDTH - 125, SCREEN_HEIGHT - 100, 1);
-}
 
-float elapsed;
+   ui_setup_callbacks();
+}
 
 void drawme_mainloop(){
    while (!WindowShouldClose())
    {
-
+      g_mouse_pos = GetMousePosition();
       if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
          left_button_pressed_event();
       }else if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)){
@@ -174,7 +173,6 @@ void drawme_mainloop(){
          ClearBackground(WHITE);
 
          // Buttons
-         
          if(g_brush == MeCircle){
             DrawRectangleRec(g_modeCircle, BLUE);
             g_modeString = "Circle";
@@ -182,14 +180,28 @@ void drawme_mainloop(){
             DrawRectangleRec(g_modeSquare, BLUE);
             g_modeString = "Square";
          }
+         
+         // UI Elements
          DrawRectangleLinesEx(g_modeCircle, 1, BLACK);
          DrawRectangleLinesEx(g_modeSquare, 1, BLACK);
+
          DrawText(g_modeString, 25, 55, 20, BLACK);
+
          draw_hexbox(&g_box_brush_color);
          draw_numbox(&g_box_brush_size);
 
          // Canvas
          canvas_draw();
+
+         // Mouse
+         if(CheckCollisionPointRec(g_mouse_pos, g_CANVAS.rect)){
+            if(g_brush == MeCircle){
+               DrawCircleLinesV(g_mouse_pos, (g_box_brush_size.value - 1) * g_scaling, BLACK);
+            }else if(g_brush == MeSquare){
+               int side = ((g_box_brush_size.value - 1) * g_scaling);
+               DrawRectangleLines(g_mouse_pos.x - side, g_mouse_pos.y - side, side + side, side + side, BLACK);
+            }
+         }
          
 
       EndDrawing();
@@ -206,44 +218,106 @@ HexBox make_hexbox(Color color, int x, int y){
    HexBox box = {
       .rect = {
          .x = x, .y = y, 
-         .height = 100
+         .height = 120
       },
       .value = color,
       .size = 10
    };
 
+   // Magic Numbers
+   int width_offset = 17;
+   box.rect.width  = 106;
+
+   box.r = make_numbox(0, 3, x + HEXBOX_PAD + width_offset, y + 21);
+   box.g = make_numbox(0, 3, x + HEXBOX_PAD + width_offset, y + 46);
+   box.b = make_numbox(0, 3, x + HEXBOX_PAD + width_offset, y + 71);
+   box.a = make_numbox(0, 3, x + HEXBOX_PAD + width_offset, y + 96);
+
    sprintf(box.hex, "0x%08X", color_to_int(color));
-   box.rect.width = MeasureText("0xFFFFFFFF", 15) + 2 * HEXBOX_PAD;
+   set_hexbox_value(&box);
 
    return box;
 }
 
-void update_hexbox(HexBox *hex){
+void set_hexbox_value(HexBox *hex){
+   uint32_t hc;
+   sscanf(hex->hex, "0x%x", &hc);
+   hex->value = int_to_color(hc);
+   hex->r.value = hex->value.r;
+   set_numbox_str(&hex->r);
+   hex->g.value = hex->value.g;
+   set_numbox_str(&hex->g);
+   hex->b.value = hex->value.b;
+   set_numbox_str(&hex->b);
+   hex->a.value = hex->value.a;
+   set_numbox_str(&hex->a);
+}
+
+int update_hexbox(HexBox *hex){
    int character = 0;
    int updated = 0;
 
-   if(IsKeyPressed(KEY_BACKSPACE)){
-      if(hex->size > 2){
-         hex->size--;
-         updated = 1;
+   if(hex->selected == 0){
+      if(IsKeyPressed(KEY_BACKSPACE)){
+         if(hex->size > 2){
+            hex->size--;
+            updated = 1;
+         }
       }
-   }
-   while((character = GetCharPressed()) != 0){
-      if(hex->size >= 10) break;
-      
-      if((character >= '0' && character <= '9') || (character >= 'A' && character <= 'F') || (character >= 'a' && character <= 'f')){
-         hex->hex[hex->size++] = toupper((char)character);
-         updated = 1;
+      while((character = GetCharPressed()) != 0){
+         if(hex->size >= 10) break;
+         
+         if((character >= '0' && character <= '9') || (character >= 'A' && character <= 'F') || (character >= 'a' && character <= 'f')){
+            hex->hex[hex->size++] = toupper((char)character);
+            updated = 1;
+         }
       }
-   }
-   if(updated){
-      hex->hex[hex->size] = 0;
+      if(updated){
+         hex->hex[hex->size] = 0;
 
-      unsigned hc;
-      sscanf(hex->hex, "0x%x", &hc);
-      // RRGGBBAA
-      hex->value = int_to_color(hc);
+         unsigned hc;
+         sscanf(hex->hex, "0x%x", &hc);
+         // RRGGBBAA
+         hex->value = int_to_color(hc);
+
+         hex->r.value = hex->value.r;
+         set_numbox_str(&hex->r);
+         hex->g.value = hex->value.g;
+         set_numbox_str(&hex->g);
+         hex->b.value = hex->value.b;
+         set_numbox_str(&hex->b);
+         hex->a.value = hex->value.a;
+         set_numbox_str(&hex->a);
+      }
+      return updated;
+   }else if(hex->selected == 1){
+      if((updated = update_numbox(&hex->r))){
+         limit_numbox(&hex->r, 0xFF, 0);
+      }
+   }else if(hex->selected == 2){
+      if((updated = update_numbox(&hex->g))){
+         limit_numbox(&hex->g, 0xFF, 0);     
+      }
+   }else if(hex->selected == 3){
+      if((updated = update_numbox(&hex->b))){
+         limit_numbox(&hex->b, 0xFF, 0);    
+      }
+   }else if(hex->selected == 4){
+      if((updated = update_numbox(&hex->a))){
+         limit_numbox(&hex->a, 0xFF, 0);   
+      }
    }
+   if(updated) set_hexbox_str(hex);
+   return updated;
+}
+
+void set_hexbox_str(HexBox *hex){
+   hex->value.r = hex->r.value & 0xFF;
+   hex->value.g = hex->g.value & 0xFF;
+   hex->value.b = hex->b.value & 0xFF;
+   hex->value.a = hex->a.value & 0xFF;
+   
+   sprintf(hex->hex, "0x%08X", color_to_int(hex->value));
 }
 
 void draw_hexbox(HexBox *hex){
@@ -254,27 +328,26 @@ void draw_hexbox(HexBox *hex){
    // b %d
    // a %d
    // color
-   char buffer[32];
    int x_offset = hex->rect.x + HEXBOX_PAD;
 
-   DrawText(hex->hex, x_offset, hex->rect.y, 15, BLACK);
+   DrawText(hex->hex, x_offset, hex->rect.y, 20, BLACK);
    // R
-   sprintf(buffer, "R: %d", hex->value.r);
-   int color_box_offset = 50;
-   DrawText(buffer, x_offset, hex->rect.y + 21, 15, BLACK);
+   draw_numbox(&hex->r);
+   DrawText("R: ", x_offset, hex->r.rect.y + HEXBOX_PAD, 20, BLACK);
    // G
-   sprintf(buffer, "G: %d", hex->value.g);
-   DrawText(buffer, x_offset, hex->rect.y + 41, 15, BLACK);
+   draw_numbox(&hex->g);
+   DrawText("G: ", x_offset, hex->g.rect.y + HEXBOX_PAD, 20, BLACK);
    // B
-   sprintf(buffer, "B: %d", hex->value.b);
-   DrawText(buffer, x_offset, hex->rect.y + 61, 15, BLACK);
+   draw_numbox(&hex->b);
+   DrawText("B: ", x_offset, hex->b.rect.y + HEXBOX_PAD, 20, BLACK);
    // A
-   sprintf(buffer, "A: %d", hex->value.a);
-   DrawText(buffer, x_offset, hex->rect.y + 81, 15, BLACK);
+   draw_numbox(&hex->a);
+   DrawText("A: ", x_offset, hex->a.rect.y + HEXBOX_PAD, 20, BLACK);
 
    // Color Box
-   DrawRectangle(x_offset + color_box_offset, hex->rect.y + 21, 15, 15, hex->value);
-   DrawRectangleLines(x_offset + color_box_offset, hex->rect.y + 21, 15, 15, BLACK);
+   int color_box_offset = 55;
+   DrawRectangle(x_offset + color_box_offset, hex->rect.y + 21, 20, 20, hex->value);
+   DrawRectangleLines(x_offset + color_box_offset, hex->rect.y + 21, 20, 20, BLACK);
 
    // Border of the whole thing
    DrawRectangleLinesEx(hex->rect, 1, BLACK);
@@ -286,6 +359,7 @@ NumBox make_numbox(int deflt, int max_chars, int x, int y){
          .x = x, .y = y, 
          .height = 20
       },
+      .deflt = deflt,
       .value = deflt,
       .size = 1,
       .max_size = max_chars
@@ -293,7 +367,7 @@ NumBox make_numbox(int deflt, int max_chars, int x, int y){
 
    assert(box.max_size < 32);
 
-   sprintf(box.number, "%d", deflt);
+   set_numbox_str(&box);
    char buff[32];
    sprintf(buff, "%0*d", max_chars, 0);
    box.rect.width = MeasureText(buff, 15) + 2 * HEXBOX_PAD;
@@ -301,7 +375,17 @@ NumBox make_numbox(int deflt, int max_chars, int x, int y){
    return box;
 }
 
-void update_numbox(NumBox *num){
+void limit_numbox(NumBox *num, int upper, int lower){
+   if(num->value > upper){
+      num->value = upper;
+      set_numbox_str(num);
+   }else if(num->value < lower){
+      num->value = lower;
+      set_numbox_str(num);
+   }
+}
+
+int update_numbox(NumBox *num){
    int character = 0;
    int updated = 0;
 
@@ -326,18 +410,28 @@ void update_numbox(NumBox *num){
    if(updated){
       num->number[num->size] = 0;
 
-      if(num->size == 0){
-         num->value = 0;
-      }else{
-         num->value = atoi(num->number);
-      }
-
+      set_numbox_value(num);
    }
+
+   return updated;
+}
+
+void set_numbox_value(NumBox *num){
+   if(num->size == 0){
+      num->value = num->deflt;
+   }else{
+      num->value = atoi(num->number);
+   }
+}
+
+void set_numbox_str(NumBox *num){
+   sprintf(num->number, "%d", num->value);
+   num->size = (int)strlen(num->number);
 }
 
 void draw_numbox(NumBox *num){
    // The number
-   DrawText(num->number, num->rect.x + HEXBOX_PAD, num->rect.y + HEXBOX_PAD, 15, BLACK);
+   DrawText(num->number, num->rect.x + HEXBOX_PAD, num->rect.y + HEXBOX_PAD, 20, BLACK);
    
    // The border
    DrawRectangleLinesEx(num->rect, 1, BLACK);

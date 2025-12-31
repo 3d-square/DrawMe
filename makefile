@@ -15,7 +15,7 @@ drawme: $(LIBNAME) src/main.c
 libdrawme.so: $(OBJS) include/* libraylib.a
 	gcc $(CFLAGS) -shared -fPIC $(DEFS) $(INC) $(LPATH) $(RPATH) $(OBJS) -o $(LIBNAME) $(LIBS)
 
-obj/%.o: src/%.c
+obj/%.o: src/%.c include/*
 	@mkdir -p obj
 	gcc $(CFLAGS) -fPIC $(DEFS) $(INC) $(LPATH) $(RPATH) -c $< -o $@
 
