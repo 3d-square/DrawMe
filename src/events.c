@@ -11,6 +11,7 @@ static MouseButton mouse_held = MOUSE_NONE;
 void ui_setup_callbacks(){
    ui_add_element(MOUSE_BUTTON_LEFT, (Rectangle*)&g_box_brush_color, brush_color_callback);
    ui_add_element(MOUSE_BUTTON_LEFT, (Rectangle*)&g_box_brush_size, brush_size_callback);
+   ui_add_element(MOUSE_BUTTON_LEFT, (Rectangle*)&g_gradient_selector, gradient_selector_callback);
 
    ui_add_element(MOUSE_BUTTON_LEFT,  (Rectangle*)&g_CANVAS, canvas_callback);
    ui_add_element(MOUSE_BUTTON_RIGHT, (Rectangle*)&g_CANVAS, canvas_r_callback);
@@ -24,13 +25,24 @@ int is_mouse_held(){
 }
 
 int left_button_pressed_event(){
-   g_selected = NONE_SELECT;
+   int return_value = 0;
+
+   if(g_selected != GRADIENT_SELECT){
+      set_select(NONE_SELECT);
+   }else if(!CheckCollisionPointRec(g_mouse_pos, g_gradient_selector.rect)){ // g_selected == GRADIENT_SELECT
+      set_select(NONE_SELECT);
+      return 0;
+   }
+
    for(int i = 0; i < g_UI.num_lmb_buttons; ++i){
       if(CheckCollisionPointRec(g_mouse_pos, *g_UI.lmb_clickable[i].rect)){
-         return g_UI.lmb_clickable[i].callback(g_UI.lmb_clickable[i].rect);
+         if(g_UI.lmb_clickable[i].callback(g_UI.lmb_clickable[i].rect)){
+            return_value = 1;
+            break;
+         }
       }
    }
-   return 0;
+   return return_value;
 }
 
 int right_button_pressed_event(){
@@ -71,58 +83,47 @@ int canvas_r_callback(void *){
 
 int mode_square_callback(void *){
    g_brush = MeSquare;
-   return g_brush;
+   return 1;
 }
 
 int mode_circle_callback(void *){
    g_brush = MeCircle;
-   return g_brush;
-}
-
-int hexbox_callback(HexBox *hex){
-   if(CheckCollisionPointRec(g_mouse_pos, hex->r.rect)){
-      hex->selected = 1;
-   }else if(CheckCollisionPointRec(g_mouse_pos, hex->g.rect)){
-      hex->selected = 2;
-
-   }else if(CheckCollisionPointRec(g_mouse_pos, hex->b.rect)){
-      hex->selected = 3;
-
-   }else if(CheckCollisionPointRec(g_mouse_pos, hex->a.rect)){
-      hex->selected = 4;
-   }else{
-      hex->selected = 0;
-   }
-   return 0;
+   return 1;
 }
 
 int brush_color_callback(void *hex){
+   if(g_selected == GRADIENT_SELECT){
+      return 0;
+   }
+   HexBox *hexbox = ((HexBox *)hex);
    mouse_held = MOUSE_NONE;
-   g_selected = BRUSH_COLOR_SELECT;
-   hexbox_callback((HexBox *)hex);
+   set_select(BRUSH_COLOR_SELECT);
+   hexbox_callback(hexbox);
+
+   if(hexbox->selected == 5){
+      set_select(GRADIENT_SELECT);
+      hexbox->selected = 0;
+   }
    return 1;
 }
 
 int brush_size_callback(void *){
    mouse_held = MOUSE_NONE;
-   g_selected = SCALING_SELECT;
+   set_select(SIZE_SELECT);
    return 1;
 }
 
 // Callback functions
-
 int button_held_event(){
-   if(is_mouse_held()){
-      if(CheckCollisionPointRec(g_mouse_pos, g_CANVAS.rect)){
-         int x;
-         int y;
+   if(CheckCollisionPointRec(g_mouse_pos, g_CANVAS.rect)){
+      int x;
+      int y;
 
-         pos_to_canvas_index(g_mouse_pos, &x, &y);
+      pos_to_canvas_index(g_mouse_pos, &x, &y);
 
-         canvas_set_cluster(x, y, g_box_brush_size.value - 1, g_brush, mouse_held == MOUSE_BUTTON_RIGHT ? g_erase_color : g_box_brush_color.value);
+      canvas_set_cluster(x, y, g_box_brush_size.value - 1, g_brush, mouse_held == MOUSE_BUTTON_RIGHT ? g_erase_color : g_box_brush_color.value);
 
-         canvas_update();
-      }
+      canvas_update();
    }
    return 1;
 }

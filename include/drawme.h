@@ -24,6 +24,14 @@ typedef struct _numbox {
    int size;
 } NumBox;
 
+typedef struct {
+   Rectangle rect;
+   Image image;
+   Texture2D texture;
+   Color top;
+   Rectangle rb, gb, bb;
+} Gradient;
+
 typedef struct _hexbox {
    Rectangle rect;
    char hex[HEX_SIZE];
@@ -70,14 +78,18 @@ extern Rectangle     g_modeSquare;
 extern DrawMode      g_brush;
 extern HexBox        g_box_brush_color;
 extern NumBox        g_box_brush_size;
+extern Gradient      g_gradient_selector;
 extern Color         g_erase_color;
 extern int           g_brush_size;
-extern int           g_selected;
+extern enum select_type g_selected;
 extern Vector2       g_mouse_pos;
 
-#define NONE_SELECT 0
-#define BRUSH_COLOR_SELECT 1
-#define SCALING_SELECT 2
+enum select_type {
+   NONE_SELECT,
+   BRUSH_COLOR_SELECT,
+   SIZE_SELECT,
+   GRADIENT_SELECT
+};
 
 /* Global Macros */
 #define CANVAS_PIXEL(i, j) (g_CANVAS.image + ((i) * g_CANVAS.cols) + (j))
@@ -90,6 +102,10 @@ void drawme_close();
 /* UI Functions */
 void ui_add_element(MouseButton button, Rectangle *bounds, button_callback callback);
 
+/* State Transitions */
+void set_select(enum select_type);
+const char *select_str();
+
 /* Callbacks */
 void ui_setup_callbacks();
 int brush_color_callback(void *);
@@ -98,6 +114,8 @@ int      canvas_callback(void *);
 int    canvas_r_callback(void *);
 int mode_square_callback(void *);
 int mode_circle_callback(void *);
+int gradient_selector_callback(void *);
+int gradient_callback(Gradient *grad, Color *out);
 /* Callbacks */
 
 /* Private Functions windows.c */
@@ -107,19 +125,28 @@ int pos_to_canvas_index(Vector2 pos, int *x, int *y);
 Color *get_canvas_pixel(Vector2 pos);
 void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color);
 
+// HexBox
 int update_hexbox(HexBox *hex);
 void set_hexbox_value(HexBox *num);
 void set_hexbox_str(HexBox *num);
+void set_hexbox_by_color(HexBox *hex);
 void draw_hexbox(HexBox *hex);
 int hexbox_callback(HexBox *hex);
 HexBox make_hexbox(Color color, int x, int y);
 
+// NumBox
 int update_numbox(NumBox *num);
 void set_numbox_value(NumBox *num);
 void set_numbox_str(NumBox *num);
 void draw_numbox(NumBox *num);
 void limit_numbox(NumBox *num, int upper, int lower);
 NumBox make_numbox(int deflt, int max_chars, int x, int y);
+
+// Gradient
+Gradient make_gradient(int x, int y);
+void free_gradient(Gradient *selector);
+void update_gradient(Gradient *gradient, Color top);
+void draw_gradient_selector(Gradient *gradient);
 
 /* Utility Functions */
 uint32_t color_to_int(Color c);

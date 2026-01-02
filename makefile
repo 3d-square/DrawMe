@@ -2,12 +2,14 @@ INC=-I$(RAYLIB_INCLUDE) -I./include/
 LIBS= -lraylib -lGL -lm -pthread -ldl -lcutils
 LPATH=-L$(HOME)/cutils/bin/ -L.
 RPATH=-Wl,-rpath,$(HOME)/cutils/bin/,-rpath,.
-CFLAGS=--std=c11 -Wall -Wextra -Werror
+CFLAGS=--std=c11 -Wall -Wextra -Werror -g
 DEFS=-DS_DEBUG_INFO_NO
 
-SRCS= src/windows.c src/events.c
+SRCS= src/windows.c src/events.c src/hexbox.c src/numbox.c src/gradient_selector.c
 OBJS=$(subst src,obj,$(subst .c,.o,$(SRCS)))
 LIBNAME=libdrawme.so
+
+all: drawme colorpick
 
 colorpick: colorpick.c
 	gcc $(CFLAGS) $(DEFS) $(INC) $(LPATH) $(RPATH) colorpick.c -o colorpick $(LIBS)
