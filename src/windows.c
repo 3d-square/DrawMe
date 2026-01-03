@@ -148,8 +148,11 @@ int interpolate(Vec2 start, Vec2 end, int step, Vec2 points[]){
 void canvas_set_interpolated_line(Vec2 start, Vec2 end, DrawMode mode, int step, Color color){
    Vec2 points[100];
    int count = interpolate(start, end, step, points);
-
+   
+   draw_logf("Interpolating from (%d, %d) to (%d, %d) with step %d", start.x, start.y, end.x, end.y, step);
+   draw_logf("  Number Points: %d", count);
    for(int i = 0; i < count; ++i){
+      draw_logf("  (%d, %d)", points[i].x, points[i].y);
       canvas_set_cluster(points[i].x, points[i].y, step, mode, color);
    }
 }
@@ -184,16 +187,13 @@ void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color){
 
 void drawme_init(){
    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "DrawMe - The slutty tool");
-   // SetTargetFPS(60);
+   // SetTargetFPS(10);
    Font default_font = LoadFontEx("/usr/share/fonts/truetype/noto/NotoMono-Regular.ttf", 15, NULL, 0);
    SetFontDefault(default_font);
    
    g_box_brush_color = make_hexbox(GREEN, 10, 100);
    g_box_brush_size = make_numbox(3, 2, 10, 250);
    g_gradient_selector = make_gradient(10, 100);
-   printf("r = %p\n", &g_gradient_selector.rb);
-   printf("r = %p\n", &g_gradient_selector.gb);
-   printf("r = %p\n", &g_gradient_selector.bb);
 
    canvas_init(125, 50, SCREEN_WIDTH - 125, SCREEN_HEIGHT - 100, 1);
 
@@ -306,7 +306,7 @@ void set_select(enum select_type select){
    const char *prev_state = select_str();
    g_selected = select;
 
-   printf("State: %s -> %s\n", prev_state, select_str());
+   draw_logf("State: %s -> %s\n", prev_state, select_str());
 }
 
 const char *select_str(){
@@ -318,3 +318,24 @@ const char *select_str(){
    };
    return "NULL";
 }
+
+/**************************** LOG *******************************/
+
+#include <stdarg.h>
+void _draw_logf(const char *str, const char *func, int line, ...){
+#  ifndef NO_DEBUG
+      va_list args;
+      va_start(args, line);
+      char buff[1024];
+      
+      sprintf(buff, "LOG[%s][%d]: %s\n", func, line, str);
+      vprintf(buff, args);
+      va_end(args);
+#  else
+   (void) str;
+   (void) func;
+   (void) line;
+#  endif
+}
+
+/**************************** LOG *******************************/

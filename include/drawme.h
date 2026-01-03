@@ -3,6 +3,7 @@
 
 #include "raylib.h"
 #include <stdint.h>
+#include <stdarg.h>
 
 typedef struct _canvas {
    Rectangle rect;
@@ -169,5 +170,9 @@ int right_button_pressed_event();
 int left_button_pressed_event();
 int right_button_released_event();
 int left_button_released_event();
+
+/* Log Functions */
+#define draw_logf(str, ...) _draw_logf(str, __func__, __LINE__, __VA_ARGS__)
+void _draw_logf(const char *str, const char *, int, ...);
 
 #endif

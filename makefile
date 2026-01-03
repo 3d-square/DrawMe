@@ -2,7 +2,7 @@ INC=-I$(RAYLIB_INCLUDE) -I./include/
 LIBS= -lraylib -lGL -lm -pthread -ldl -lcutils
 LPATH=-L$(HOME)/cutils/bin/ -L.
 RPATH=-Wl,-rpath,$(HOME)/cutils/bin/,-rpath,.
-CFLAGS=--std=c11 -Wall -Wextra -Werror -g
+CFLAGS=--std=c11 -Wall -Wextra -Werror -g -DNO_DEBUG
 DEFS=-DS_DEBUG_INFO_NO
 
 SRCS= src/windows.c src/events.c src/hexbox.c src/numbox.c src/gradient_selector.c
