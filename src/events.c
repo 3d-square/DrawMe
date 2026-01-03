@@ -121,7 +121,16 @@ int button_held_event(){
 
       pos_to_canvas_index(g_mouse_pos, &x, &y);
 
-      canvas_set_cluster(x, y, g_box_brush_size.value - 1, g_brush, mouse_held == MOUSE_BUTTON_RIGHT ? g_erase_color : g_box_brush_color.value);
+      Color c = mouse_held == MOUSE_BUTTON_RIGHT ? g_erase_color : g_box_brush_color.value;
+
+      if(!CheckCollisionPointRec(g_mouse_pos, g_CANVAS.rect)){
+         canvas_set_cluster(x, y, g_box_brush_size.value - 1, g_brush, c);
+      }else{
+         Vec2 start;
+         pos_to_canvas_index(g_mouse_pos, &start.x, &start.y);
+
+         canvas_set_interpolated_line(start, CLITERAL(Vec2){x, y}, g_brush, g_box_brush_size.value - 1, c);
+      }
 
       canvas_update();
    }

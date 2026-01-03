@@ -103,17 +103,54 @@ Color *get_canvas_pixel(Vector2 pos){
    return NULL;
 }
 
-void canvas_set_extrapolated_lint(Vector2 start, Vector2 end, int step){
-   if(start.x != nan){
-      Vector2 slope = {
-         end.x - start.x,
-         end.y - start.y
-      };
+int interpolate(Vec2 start, Vec2 end, int step, Vec2 points[]){
+   int dx = ABS(start.x - end.x),
+       sx = start.x < end.x ? 1 : -1;
 
-      //                     x - xs
-      // y = ys + (ye - ys)-----------
-      //                     xe - xs
-      //
+   int dy = ABS(start.y - end.y),
+       sy = start.y < end.y ? 1 : -1;
+
+   int err = (dx > dy ? dx : -dy) / 2,
+       e2;
+
+   int stepy = step;
+
+   int count = 0;
+
+   while(1){
+      if (start.x == end.x && start.y == end.y){
+         points[count++] = start;
+         break;
+      }
+
+      if(stepy >= step){
+         stepy = 0;
+         points[count++] = start;
+      }
+
+      e2 = err;
+
+      if(e2 > -dx){
+         err -= dy;
+         start.x += sx;
+         stepy += 1;
+      }
+
+      if(e2 < dy){
+         err += dx;
+         start.y += sy;
+         stepy += 1;
+      }
+   }
+   return count;
+}
+
+void canvas_set_interpolated_line(Vec2 start, Vec2 end, DrawMode mode, int step, Color color){
+   Vec2 points[100];
+   int count = interpolate(start, end, step, points);
+
+   for(int i = 0; i < count; ++i){
+      canvas_set_cluster(points[i].x, points[i].y, step, mode, color);
    }
 }
 
@@ -164,7 +201,6 @@ void drawme_init(){
 }
 
 void drawme_mainloop(){
-   g_prev_mouse_pos = (Vector2){nan, nan};
    while (!WindowShouldClose())
    {
       g_mouse_pos = GetMousePosition();

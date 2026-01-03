@@ -67,6 +67,8 @@ typedef enum {
    MeSquare
 } DrawMode;
 
+#define ABS(a) (a) > 0 ? (a) : -(a)
+
 
 /* Extern Globals */
 extern const int SCREEN_WIDTH;
@@ -83,6 +85,7 @@ extern Color         g_erase_color;
 extern int           g_brush_size;
 extern enum select_type g_selected;
 extern Vector2       g_mouse_pos;
+extern Vector2       g_prev_mouse_pos;
 
 enum select_type {
    NONE_SELECT,
@@ -90,6 +93,11 @@ enum select_type {
    SIZE_SELECT,
    GRADIENT_SELECT
 };
+
+typedef struct Vec2{
+   int x;
+   int y;
+} Vec2;
 
 /* Global Macros */
 #define CANVAS_PIXEL(i, j) (g_CANVAS.image + ((i) * g_CANVAS.cols) + (j))
@@ -124,6 +132,8 @@ void canvas_draw();
 int pos_to_canvas_index(Vector2 pos, int *x, int *y);
 Color *get_canvas_pixel(Vector2 pos);
 void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color);
+int interpolate(Vec2 start, Vec2 end, int step, Vec2 points[]);
+void canvas_set_interpolated_line(Vec2 start, Vec2 end, DrawMode mode, int step, Color color);
 
 // HexBox
 int update_hexbox(HexBox *hex);

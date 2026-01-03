@@ -9,7 +9,10 @@ SRCS= src/windows.c src/events.c src/hexbox.c src/numbox.c src/gradient_selector
 OBJS=$(subst src,obj,$(subst .c,.o,$(SRCS)))
 LIBNAME=libdrawme.so
 
-all: drawme colorpick
+all: drawme colorpick interpolate
+
+interpolate: interpolate.c
+	gcc $(CFLAGS) $(DEFS) $(INC) $(LPATH) $(RPATH) interpolate.c -o interpolate $(LIBS)
 
 colorpick: colorpick.c
 	gcc $(CFLAGS) $(DEFS) $(INC) $(LPATH) $(RPATH) colorpick.c -o colorpick $(LIBS)
