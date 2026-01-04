@@ -19,7 +19,7 @@ Texture2D      g_CANVAS_TEXTURE = {0};
 DrawMode       g_brush = MeCircle;
 Gradient       g_gradient_selector = {0};
 int            g_brush_size = 3;
-const char     *g_modeString = "";
+const char     *g_modeString = "Circle";
 Color          g_erase_color = WHITE;
 enum select_type g_selected;
 Vector2        g_mouse_pos;
@@ -29,6 +29,7 @@ Vector2        g_prev_mouse_pos;
 // Radio Buttons
 Rectangle g_modeCircle = {.x = 25, .y = 25, .width = 25, .height = 25 };
 Rectangle g_modeSquare = {.x = 55, .y = 25, .width = 25, .height = 25 };
+Rectangle g_modeBucket = {.x = 85, .y = 25, .width = 25, .height = 25 };
 
 // Hex/Num boxes
 HexBox g_box_brush_color;
@@ -182,7 +183,28 @@ void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color){
          }
       }
    }
-   
+}
+
+void flood_fill_helper(int x, int y, uint32_t oldColor, uint32_t newColor){
+   if(x < 0 || x >= g_CANVAS.cols ||
+      y < 0 || y >= g_CANVAS.rows ||
+      oldColor != *CANVAS_PIXEL(y, x)){
+      return;
+   }
+
+   *CANVAS_PIXEL(y, x) = newColor;
+
+   flood_fill_helper(x + 1, y, oldColor, newColor);
+   flood_fill_helper(x - 1, y, oldColor, newColor);
+   flood_fill_helper(x, y + 1, oldColor, newColor);
+   flood_fill_helper(x, y - 1, oldColor, newColor);
+}
+
+void canvas_flood_fill(int x, int y, Color color){
+   if(*((uint32_t *)&color) == *CANVAS_PIXEL(y, x)){
+      return;
+   }
+   flood_fill_helper(x, y, *CANVAS_PIXEL(y, x), *((uint32_t *)&color));
 }
 
 void drawme_init(){
@@ -193,7 +215,7 @@ void drawme_init(){
    
    g_box_brush_color = make_hexbox(GREEN, 10, 100);
    g_box_brush_size = make_numbox(3, 2, 10, 250);
-   g_gradient_selector = make_gradient(10, 100);
+   g_gradient_selector = make_gradient(GREEN, 10, 100);
 
    canvas_init(125, 50, SCREEN_WIDTH - 125, SCREEN_HEIGHT - 100, 1);
 
@@ -234,15 +256,16 @@ void drawme_mainloop(){
          // Buttons
          if(g_brush == MeCircle){
             DrawRectangleRec(g_modeCircle, BLUE);
-            g_modeString = "Circle";
          }else if(g_brush == MeSquare){
             DrawRectangleRec(g_modeSquare, BLUE);
-            g_modeString = "Square";
+         }else if(g_brush == MeBucket){
+            DrawRectangleRec(g_modeBucket, BLUE);
          }
          
          // UI Elements
          DrawRectangleLinesEx(g_modeCircle, 1, BLACK);
          DrawRectangleLinesEx(g_modeSquare, 1, BLACK);
+         DrawRectangleLinesEx(g_modeBucket, 1, BLACK);
 
          DrawText(g_modeString, 25, 55, 15, BLACK);
 
@@ -255,6 +278,8 @@ void drawme_mainloop(){
          // Gradient Selector
          if(g_selected == GRADIENT_SELECT){
             draw_gradient_selector(&g_gradient_selector);
+            DrawRectangle(g_gradient_selector.rect.x, g_gradient_selector.rect.y - 16, 15, 15, g_box_brush_color.value);
+            DrawRectangleLines(g_gradient_selector.rect.x, g_gradient_selector.rect.y - 16, 15, 15, BLACK);
          }
 
          // Mouse

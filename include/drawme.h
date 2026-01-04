@@ -65,7 +65,8 @@ typedef struct _ui {
 
 typedef enum {
    MeCircle,
-   MeSquare
+   MeSquare,
+   MeBucket
 } DrawMode;
 
 #define ABS(a) (a) > 0 ? (a) : -(a)
@@ -78,6 +79,7 @@ extern DrawMeCanvas  g_CANVAS;
 extern DrawMeUI      g_UI;
 extern Rectangle     g_modeCircle;
 extern Rectangle     g_modeSquare;
+extern Rectangle     g_modeBucket;
 extern DrawMode      g_brush;
 extern HexBox        g_box_brush_color;
 extern NumBox        g_box_brush_size;
@@ -87,6 +89,7 @@ extern int           g_brush_size;
 extern enum select_type g_selected;
 extern Vector2       g_mouse_pos;
 extern Vector2       g_prev_mouse_pos;
+extern const char *  g_modeString;
 
 enum select_type {
    NONE_SELECT,
@@ -123,6 +126,7 @@ int      canvas_callback(void *);
 int    canvas_r_callback(void *);
 int mode_square_callback(void *);
 int mode_circle_callback(void *);
+int mode_bucket_callback(void *);
 int gradient_selector_callback(void *);
 int gradient_callback(Gradient *grad, Color *out);
 /* Callbacks */
@@ -135,6 +139,7 @@ Color *get_canvas_pixel(Vector2 pos);
 void canvas_set_cluster(int x, int y, int radius, DrawMode mode, Color color);
 int interpolate(Vec2 start, Vec2 end, int step, Vec2 points[]);
 void canvas_set_interpolated_line(Vec2 start, Vec2 end, DrawMode mode, int step, Color color);
+void canvas_flood_fill(int x, int y, Color color);
 
 // HexBox
 int update_hexbox(HexBox *hex);
@@ -154,7 +159,7 @@ void limit_numbox(NumBox *num, int upper, int lower);
 NumBox make_numbox(int deflt, int max_chars, int x, int y);
 
 // Gradient
-Gradient make_gradient(int x, int y);
+Gradient make_gradient(Color c, int x, int y);
 void free_gradient(Gradient *selector);
 void update_gradient(Gradient *gradient, Color top);
 void draw_gradient_selector(Gradient *gradient);

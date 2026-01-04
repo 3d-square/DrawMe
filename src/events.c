@@ -18,6 +18,7 @@ void ui_setup_callbacks(){
 
    ui_add_element(MOUSE_BUTTON_LEFT, &g_modeSquare, mode_square_callback);
    ui_add_element(MOUSE_BUTTON_LEFT, &g_modeCircle, mode_circle_callback);
+   ui_add_element(MOUSE_BUTTON_LEFT, &g_modeBucket, mode_bucket_callback);
 }
 
 int is_mouse_held(){
@@ -61,7 +62,11 @@ int canvas_callback(void *){
    int y;
 
    pos_to_canvas_index(g_mouse_pos, &x, &y);
-   canvas_set_cluster(x, y, g_box_brush_size.value - 1, g_brush, g_box_brush_color.value);
+   if(g_brush != MeBucket){
+      canvas_set_cluster(x, y, g_box_brush_size.value - 1, g_brush, g_box_brush_color.value);
+   }else{
+      canvas_flood_fill(x, y, g_box_brush_color.value);
+   }
    canvas_update();
 
    mouse_held = MOUSE_BUTTON_LEFT;
@@ -83,11 +88,20 @@ int canvas_r_callback(void *){
 
 int mode_square_callback(void *){
    g_brush = MeSquare;
+   g_modeString = "Square";
    return 1;
 }
 
 int mode_circle_callback(void *){
    g_brush = MeCircle;
+   g_modeString = "Circle";
+   return 1;
+}
+
+int mode_bucket_callback(void *){
+   printf("Me\n");
+   g_brush = MeBucket;
+   g_modeString = "Bucket";
    return 1;
 }
 
@@ -116,6 +130,8 @@ int brush_size_callback(void *){
 // Callback functions
 int button_held_event(){
    if(CheckCollisionPointRec(g_mouse_pos, g_CANVAS.rect)){
+      if(g_brush == MeBucket) return 1;
+
       int x;
       int y;
 

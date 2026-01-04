@@ -8,14 +8,14 @@
 
 #include "raylib.h"
 
-Gradient make_gradient(int x, int y){
+Gradient make_gradient(Color c, int x, int y){
    Gradient gradient = {.rect = {.x = x, .y = y, .height = 256, .width = 360}};
    gradient.rb = CLITERAL(Rectangle){x + 270, y, 25, 256};
    gradient.gb = CLITERAL(Rectangle){x + 300, y, 25, 256};
    gradient.bb = CLITERAL(Rectangle){x + 330, y, 25, 256};
 
-   gradient.top = int_to_color(0x0000FFFF);
-   gradient.image = GenImageGradientLinear(256, 256, 45, int_to_color(0x000000FF), gradient.top);
+   gradient.top = c;
+   gradient.image = GenImageGradientLinear(256, 256, 45, c, gradient.top);
    
    gradient.texture = LoadTextureFromImage(gradient.image);
 
